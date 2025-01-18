@@ -2,23 +2,19 @@ const express = require("express");
 const authmiddleware = require("../middleware");
 const mongoose = require("mongoose");
 const { Account } = require("../Account");
-const { connectDB } = require("../db");
 
 const router = express.Router();
-
-connectDB();
 
 router.get("/balance", authmiddleware, async (req, res) => {
   const account = await Account.findOne({
     userId: req.userId,
   });
-
   res.json({
     balance: account.balance,
   });
 });
 
-async function transfer(req) {
+router.post("/transfer", authmiddleware, async (req, res) => {
   const session = await mongoose.startSession();
 
   session.startTransaction();
@@ -29,16 +25,18 @@ async function transfer(req) {
 
   if (!account || account.balance < amount) {
     await session.abortTransaction();
-    console.log("Insufficient balance");
-    return;
+    return res.status(400).json({
+      message: "Insufficient balance",
+    });
   }
 
   const toAccount = await Account.findOne({ userId: to }).session(session);
 
   if (!toAccount) {
     await session.abortTransaction();
-    console.log("Invalid account");
-    return;
+    return res.status(400).json({
+      message: "Invalid account",
+    });
   }
 
   // Perform the transfer
@@ -47,39 +45,8 @@ async function transfer(req) {
 
   // Commit the transaction
   await session.commitTransaction();
-  console.log("done");
-}
-
-transfer({
-  userId: "65ac44e10ab2ec750ca666a5",
-  body: {
-    to: "65ac44e40ab2ec750ca666aa",
-    amount: 100,
-  },
+  res.json({
+    message: "Transfer successful",
+  });
 });
-
-transfer({
-  userId: "65ac44e10ab2ec750ca666a5",
-  body: {
-    to: "65ac44e40ab2ec750ca666aa",
-    amount: 100,
-  },
-});
-module.exports = router;
-transfer({
-  userId: "65ac44e10ab2ec750ca666a5",
-  body: {
-    to: "65ac44e40ab2ec750ca666aa",
-    amount: 100,
-  },
-});
-
-transfer({
-  userId: "65ac44e10ab2ec750ca666a5",
-  body: {
-    to: "65ac44e40ab2ec750ca666aa",
-    amount: 100,
-  },
-});
-
 module.exports = router;

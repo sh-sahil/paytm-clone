@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const connectDB = require("./db");
+const { connectDB } = require("./db");
 const mainRouter = require("./routes/index");
 
 connectDB();
